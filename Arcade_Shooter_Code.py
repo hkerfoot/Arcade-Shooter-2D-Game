@@ -28,9 +28,10 @@ start_time = pygame.time.get_ticks()
 class Player(pygame.sprite.Sprite):
 
     def __init__(self):
-        super().__init__()  # Call the parent class (Sprite) constructor
+        super().__init__()  
 
-        # Load images
+
+        # Load images and audio
         self.player_stationary = pygame.image.load("Placeholder").convert_alpha()
         self.player_walk_1 = pygame.image.load("Placeholder").convert_alpha()
         player_walk_2 = pygame.image.load("Placeholder").convert_alpha()
@@ -83,7 +84,7 @@ class Player(pygame.sprite.Sprite):
 
         self.cooldown_timer = 0
 
-    def player_input(self):
+    def player_input(self): # Player input and movement
         keys = pygame.key.get_pressed()
         if keys[pygame.K_d]:
             self.rect.left += 5
@@ -92,44 +93,44 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_SPACE] and self.rect.bottom >= 354:
             self.gravity = -20
 
-    def player_animation(self):
+    def player_animation(self): # Player Animation
         mouse_pos = pygame.mouse.get_pos()
         keys = pygame.key.get_pressed()
-
-        if mouse_pos[0] > self.rect.centerx:  # Compare only the x-coordinate for left/right
+        
+        if mouse_pos[0] > self.rect.centerx:  # Check if mouse is right of the player
             if self.rect.bottom < 354:
                 self.image = self.player_walk_1  # Default to stationary when airborne
             else:
-                if keys[pygame.K_d]:
+                if keys[pygame.K_d]: # Amimation when moving right
                     self.player_index += 0.15
                     if self.player_index >= len(self.player_walk):
                         self.player_index = 0
                     self.image = self.player_walk[int(self.player_index)]
-                elif keys[pygame.K_a]:
+                elif keys[pygame.K_a]: # Amimation when moving left
                     self.player_index += 0.15
                     if self.player_index >= len(self.player_walk_backward):
                         self.player_index = 0
                     self.image = self.player_walk_backward[int(self.player_index)]
                 else:
-                    self.image = self.player_stationary
+                    self.image = self.player_stationary # Stationary animation
         else:
             if self.rect.bottom < 354:
                 self.image = pygame.transform.flip(self.player_walk_1, 1, 0)
             else:
-                if keys[pygame.K_d]:
+                if keys[pygame.K_d]: # Amimation when moving right (flipped)
                     self.player_index += 0.15
                     if self.player_index >= len(self.player_walk_backward):
                         self.player_index = 0
                     self.image = pygame.transform.flip(self.player_walk_backward[int(self.player_index)], 1, 0)
-                elif keys[pygame.K_a]:
+                elif keys[pygame.K_a]: # Amimation when moving left (flipped)
                     self.player_index += 0.15
                     if self.player_index >= len(self.player_walk):
                         self.player_index = 0
                     self.image = pygame.transform.flip(self.player_walk[int(self.player_index)], 1, 0)
                 else:
-                    self.image = pygame.transform.flip(self.player_stationary, 1, 0)
+                    self.image = pygame.transform.flip(self.player_stationary, 1, 0) # Stationary (flipped)
 
-    def apply_gravity(self):
+    def apply_gravity(self): # Implement gravity
         self.gravity += 1
         self.rect.y += self.gravity
         if self.rect.bottom >= 354:
@@ -146,19 +147,19 @@ class Player(pygame.sprite.Sprite):
         self.shield()
         self.health()
 
-    def check_collision(self):
+    def check_collision(self): # Checking collisions to trigger shield recharge timer
         if pygame.sprite.spritecollide(self, grunt_group, False) or pygame.sprite.spritecollide(self, elite_group, False) or pygame.sprite.spritecollide(self, zealot_group, False):
             self.shield_active = False
             if self.cooldown_timer == 0:
                 self.cooldown_timer = 50
 
-    def player_bounds(self):
+    def player_bounds(self): # Limit player bounds
         if self.rect.x < -30:
             self.rect.x = -30
         if self.rect.x > 750:
             self.rect.x = 750
 
-    def muzzle_flash(self):
+    def muzzle_flash(self): # Add muzzle flash animations
         if event.type == MOUSEBUTTONDOWN:
             self.flipped_gunfire_surface = pygame.transform.flip(self.gunfire_surface, 1, 0)
             if mouse_pos > self.rect.center:
@@ -166,7 +167,7 @@ class Player(pygame.sprite.Sprite):
             else:
                 screen.blit(self.flipped_gunfire_surface, (self.rect.x - 13, self.rect.y + 16))
 
-    def gunsight_init(self):
+    def gunsight_init(self): # Have gunsight follow mouse
         self.gunsight_rect = self.gunsight_surface.get_rect(topleft=(0, 0))
         self.gunsight_rect.center = mouse_pos
         screen.blit(self.gunsight_surface, self.gunsight_rect)
@@ -182,7 +183,7 @@ class Player(pygame.sprite.Sprite):
 
             elapsed_time = pygame.time.get_ticks() - self.shield_time_1
 
-            if elapsed_time < 4000:
+            if elapsed_time < 4000: # Shield audio
                 screen.blit(self.shield_empty, self.shield_empty_rect)
                 if elapsed_time == 0:
                     self.channel_1.play(self.empty)
@@ -201,14 +202,14 @@ class Player(pygame.sprite.Sprite):
                     self.shield_index = len(self.shield_frames) - 1
 
                 screen.blit(self.shield_frames[int(self.shield_index)], self.shield_full_rect)
-            # After 8 seconds, reactivate the shield and reset variables
-            else:
+            
+            else: # After 8 seconds reactivate the shield and reset variables
                 self.shield_active = True
                 delattr(self, 'shield_time_1')
                 if hasattr(self, 'shield_index'):
                     delattr(self, 'shield_index')
 
-    def health(self):
+    def health(self): # Implement 3 bar health system
         if self.cooldown_timer > 0:
             self.cooldown_timer -= 1
         if pygame.sprite.spritecollide(self, grunt_group, False) or pygame.sprite.spritecollide(self, elite_group, False) or pygame.sprite.spritecollide(self, zealot_group, False):
@@ -223,10 +224,10 @@ class Player(pygame.sprite.Sprite):
         if len(player_health) == 1:
             screen.blit(self.health_low, self.shield_full_rect)
 
-class Grunt(pygame.sprite.Sprite):
+class Grunt(pygame.sprite.Sprite): # Grunt class
     def __init__(self):
         super().__init__()
-
+        # Load assets
         self.grunt_walk_1 = pygame.image.load("Placeholder").convert_alpha()
         grunt_walk_2 = pygame.image.load("Placeholder").convert_alpha()
         grunt_death_1 = pygame.image.load("Placeholder").convert_alpha()
@@ -254,7 +255,7 @@ class Grunt(pygame.sprite.Sprite):
 
         self.direction_set()
 
-    def direction_set(self):
+    def direction_set(self): # Pick random side for grunt to spawn
         self.image = self.grunt_walk_1
         self.direction = random.choice(['left', 'right'])
         if self.direction == 'left':
@@ -264,7 +265,7 @@ class Grunt(pygame.sprite.Sprite):
 
     def animation(self):
         if not self.die:  # If the grunt is alive
-            self.frame_index += 0.12
+            self.frame_index += 0.12 # Simple walking animation
             if self.frame_index >= len(self.walk_frames):
                 self.frame_index = 0
             if self.direction == 'right':
@@ -274,7 +275,7 @@ class Grunt(pygame.sprite.Sprite):
                 self.image = self.walk_frames[int(self.frame_index)]
                 self.rect.x -= self.speed
         else:  # If the grunt is dead
-            self.death_frame_index += 0.12
+            self.death_frame_index += 0.12 # Death animation
             if self.death_frame_index >= len(self.death_frames):
                 self.death_frame_index = 0
             if self.direction == 'right':
@@ -289,7 +290,7 @@ class Grunt(pygame.sprite.Sprite):
 
 
 
-    def death(self):
+    def death(self): # Triggers enemy death once clicked
         self.mouse_pos = pygame.mouse.get_pos()
         if pygame.mouse.get_pressed()[0] and self.rect.collidepoint(self.mouse_pos):  # Left click
             if not self.die:  # Only trigger once
@@ -298,7 +299,7 @@ class Grunt(pygame.sprite.Sprite):
                 noise.play()
                 dead_grunt_list.append(self.rect)
 
-    def execute(self):
+    def execute(self): # Drop enemy off screen
         if self.rect.x >= 1600 or self.rect.x <= -500 or self.rect.y >= 600:
             self.kill()
         if game_active == False:
@@ -310,10 +311,11 @@ class Grunt(pygame.sprite.Sprite):
         self.execute()
         self.death()
 
-class Elite(pygame.sprite.Sprite):
+class Elite(pygame.sprite.Sprite):  # Elite class
     def __init__(self):
         super().__init__()
 
+        # Load assets
         self.elite_stationary = pygame.image.load("Placeholder").convert_alpha()
         elite_walk_1 = pygame.image.load("Placeholder").convert_alpha()
         elite_walk_2 = pygame.image.load("Placeholder").convert_alpha()
@@ -327,18 +329,19 @@ class Elite(pygame.sprite.Sprite):
         elite_sfx_2 = pygame.mixer.Sound("Placeholder")
         elite_sfx_3 = pygame.mixer.Sound("Placeholder")
 
+        # Animation setup
         self.frame_index = 0
         self.death_frame_index = 0
         self.walk_frames = [elite_walk_1, elite_walk_2, elite_walk_3, elite_walk_4]
         self.death_frames = [elite_death_1, elite_walk_2, elite_death_2, elite_walk_2]
-        self.elite_sfx_list = [elite_scream_sfx,elite_sfx_1,elite_sfx_2,elite_sfx_3]
+        self.elite_sfx_list = [elite_scream_sfx, elite_sfx_1, elite_sfx_2, elite_sfx_3]
         self.gravity = 0
         self.speed = random.uniform(2.8, 3.3)
         self.die = False
 
         self.direction_set()
 
-    def direction_set(self):
+    def direction_set(self):  # Pick random side for enemy to spawn
         self.image = self.elite_stationary
         self.direction = random.choice(['left', 'right'])
         if self.direction == 'left':
@@ -346,34 +349,32 @@ class Elite(pygame.sprite.Sprite):
         else:
             self.rect = self.image.get_rect(bottomright=(randint(-300, -100), 375))
 
-    def animation(self):
-        if not self.die:  # If the grunt is alive
+    def animation(self):  # Animation and movement 
+        if not self.die:  # If the elite is alive
             self.frame_index += 0.12
             if self.frame_index >= len(self.walk_frames):
                 self.frame_index = 0
-            if self.direction == 'right':
+            if self.direction == 'right':  # Move and animate to the right
                 self.image = pygame.transform.flip(self.walk_frames[int(self.frame_index)], 1, 0)
                 self.rect.x += self.speed
-            else:
+            else:  # Move and animate to the left
                 self.image = self.walk_frames[int(self.frame_index)]
                 self.rect.x -= self.speed
-        else:  # If the grunt is dead
-            self.death_frame_index += 0.15
+        else:  # If the enemy is dead
+            self.death_frame_index += 0.15  # Death animation
             if self.death_frame_index >= len(self.death_frames):
                 self.death_frame_index = 0
-            if self.direction == 'right':
+            if self.direction == 'right':  # Death movement (right)
                 self.image = pygame.transform.flip(self.death_frames[int(self.death_frame_index)], 1, 0)
                 self.rect.x += 2.5
                 self.gravity += 0.5
-            else:
+            else:  # Death movement (left)
                 self.image = self.death_frames[int(self.death_frame_index)]
                 self.rect.x -= 2.5
                 self.gravity += 0.5
             self.rect.y += self.gravity
 
-
-
-    def death(self):
+    def death(self):  # Triggers enemy death when clicked
         self.mouse_pos = pygame.mouse.get_pos()
         if pygame.mouse.get_pressed()[0] and self.rect.collidepoint(self.mouse_pos):  # Left click
             if not self.die:  # Only trigger once
@@ -382,7 +383,7 @@ class Elite(pygame.sprite.Sprite):
                 noise.play()
                 dead_elite_list.append(self.rect)
 
-    def execute(self):
+    def execute(self):  # Remove elite off screen or after game ends
         if self.rect.x >= 1600 or self.rect.x <= -500 or self.rect.y >= 600:
             self.kill()
         if game_active == False:
@@ -393,10 +394,11 @@ class Elite(pygame.sprite.Sprite):
         self.execute()
         self.death()
 
-class Zealot(pygame.sprite.Sprite):
+class Zealot(pygame.sprite.Sprite):  # Zealot class
     def __init__(self):
         super().__init__()
 
+        # Load assets
         self.zealot_walk_1 = pygame.image.load("Placeholder").convert_alpha()
         zealot_walk_2 = pygame.image.load("Placeholder").convert_alpha()
         zealot_walk_3 = pygame.image.load("Placeholder").convert_alpha()
@@ -410,18 +412,19 @@ class Zealot(pygame.sprite.Sprite):
         elite_sfx_2 = pygame.mixer.Sound("Placeholder")
         elite_sfx_3 = pygame.mixer.Sound("Placeholder")
 
+        # Animation setup
         self.frame_index = 0
         self.death_frame_index = 0
         self.walk_frames = [self.zealot_walk_1, zealot_walk_2, zealot_walk_3, zealot_walk_4]
         self.death_frames = [zealot_death_1, zealot_death_3, zealot_death_2, zealot_death_3]
-        self.elite_sfx_list = [elite_scream_sfx,elite_sfx_1,elite_sfx_2,elite_sfx_3]
+        self.elite_sfx_list = [elite_scream_sfx, elite_sfx_1, elite_sfx_2, elite_sfx_3]
         self.gravity = 0
         self.speed = random.uniform(3.3, 3.8)
         self.die = False
 
         self.direction_set()
 
-    def direction_set(self):
+    def direction_set(self):  # Pick random side for enemy to spawn
         self.image = self.zealot_walk_1
         self.direction = random.choice(['left', 'right'])
         if self.direction == 'left':
@@ -429,34 +432,32 @@ class Zealot(pygame.sprite.Sprite):
         else:
             self.rect = self.image.get_rect(bottomright=(randint(-300, -100), 355))
 
-    def animation(self):
-        if not self.die:  # If the grunt is alive
+    def animation(self):  # Animation and movement
+        if not self.die:  # If the enemy is alive
             self.frame_index += 0.12
             if self.frame_index >= len(self.walk_frames):
                 self.frame_index = 0
-            if self.direction == 'right':
+            if self.direction == 'right':  # Move and animate to the right
                 self.image = pygame.transform.flip(self.walk_frames[int(self.frame_index)], 1, 0)
                 self.rect.x += self.speed
-            else:
+            else:  # Move and animate to the left
                 self.image = self.walk_frames[int(self.frame_index)]
                 self.rect.x -= self.speed
-        else:  # If the grunt is dead
-            self.death_frame_index += 0.15
+        else:  # If the zealot is dead
+            self.death_frame_index += 0.15  # Death animation
             if self.death_frame_index >= len(self.death_frames):
                 self.death_frame_index = 0
-            if self.direction == 'right':
+            if self.direction == 'right':  # Death movement (right)
                 self.image = pygame.transform.flip(self.death_frames[int(self.death_frame_index)], 1, 0)
                 self.rect.x += 2.5
                 self.gravity += 0.5
-            else:
+            else:  # Death movement (left)
                 self.image = self.death_frames[int(self.death_frame_index)]
                 self.rect.x -= 2.5
                 self.gravity += 0.5
             self.rect.y += self.gravity
 
-
-
-    def death(self):
+    def death(self):  # Triggers enemy death when clicked
         self.mouse_pos = pygame.mouse.get_pos()
         if pygame.mouse.get_pressed()[0] and self.rect.collidepoint(self.mouse_pos):  # Left click
             if not self.die:  # Only trigger once
@@ -465,17 +466,17 @@ class Zealot(pygame.sprite.Sprite):
                 noise.play()
                 dead_zealot_list.append(self.rect)
 
-    def execute(self):
+    def execute(self):  # Remove enemy off screen or after game ends
         if self.rect.x >= 1600 or self.rect.x <= -500 or self.rect.y >= 600:
             self.kill()
         if game_active == False:
             self.kill()
 
-
     def update(self):
         self.animation()
         self.execute()
         self.death()
+
 
 
 player = pygame.sprite.GroupSingle()
@@ -495,13 +496,14 @@ player_health = [1,1,1]
 grunt_timer = pygame.USEREVENT + 1
 elite_timer = pygame.USEREVENT + 2
 zealot_timer = pygame.USEREVENT + 3
-
+# Set flags
 game_active = False
 level_active = False
 death_active = False
 level_1 = False
 level_2 = False
 
+# Game music
 channel_3 = pygame.mixer.Channel(3)
 halo_theme_sfx = pygame.mixer.Sound("Placeholder")
 zeta_halo_sfx = pygame.mixer.Sound("Placeholder")
@@ -512,7 +514,7 @@ halo_theme_sfx.set_volume(1.0)
 zeta_halo_sfx.set_volume(0.7)
 through_the_trees_sfx.set_volume(1.0)
 
-# Flags to track current music state
+# Flags to track music state
 is_playing_zeta_halo = False
 is_playing_halo_theme = False
 is_playing_through_the_trees = False
@@ -520,7 +522,9 @@ is_playing_through_the_trees = False
 
 # Functions
 
-def background_init():
+def background_init(): # Backdrop setup (mostly scoring)
+
+    # Score graphics    
     score_text = pygame.font.Font(None, 30)
 
     grunt_text = pygame.font.Font(None, 25)
@@ -531,7 +535,7 @@ def background_init():
     elite_text_surface = elite_text.render(f'Elites: {int(len(dead_elite_list))} x25', False, 'black')
     zealot_text_surface = zealot_text.render(f'Zealots: {int(len(dead_zealot_list))} x50', False, 'black')
 
-
+     # More score graphics
 
     score_rect = score_surface.get_rect(topleft=(5, 5))
     grunt_rect = grunt_text_surface.get_rect(topleft=(5,30))
@@ -550,7 +554,7 @@ def background_init():
     screen.blit(elite_text_surface, (6, 50))
     screen.blit(zealot_text_surface, (6, 70))
 
-def city():
+def city(): # Map graphics (city)
     floor_surface = pygame.image.load("Placeholder").convert_alpha()
     backdrop_surface = pygame.image.load("Placeholder").convert_alpha()
     city_surface = pygame.image.load("Placeholder")
@@ -559,69 +563,82 @@ def city():
     screen.blit(city_surface, (0, -45))
     screen.blit(floor_surface, (0, 45))
 
-def forest():
+def forest(): # Map graphics (forest)
     floor_surface = pygame.image.load("Placeholder").convert_alpha()
     backdrop_surface = pygame.image.load("Placeholder").convert_alpha()
     screen.blit(backdrop_surface, (0, 0))
     screen.blit(floor_surface, (0, 58))
 
-def game():
+def game(): # Menu code
     global game_active, level_active, death_active, level_1, level_2
     escape_text = pygame.font.Font(None, 25)
     escape_rect = escape_text.render('Press ESCAPE to Quit', False, 'white')
 
-    if not game_active:
-        if not level_active and not death_active:
-            menu_1 = pygame.image.load("Placeholder").convert_alpha()
+    if not game_active: # If gameplay is not running
+        if not level_active and not death_active: # If not on death screen or level select
+            # menu graphics
+            menu_1 = pygame.image.load("Placeholder").convert_alpha() 
+            
             screen.blit(menu_1, (0,0))
             screen.blit(escape_rect, (600,10))
-            if pygame.key.get_pressed()[pygame.K_SPACE]:
+            
+            if pygame.key.get_pressed()[pygame.K_SPACE]: # Press space to move to level select
                 level_active = True
-        elif level_active and not death_active:
+        elif level_active and not death_active: # Level select
+            # Load assets
             menu_2 = pygame.image.load("Placeholder").convert_alpha()
             gameplay_1 = pygame.image.load("Placeholder").convert_alpha()
             gameplay_2 = pygame.image.load("Placeholder").convert_alpha()
+            # Graphics
             screen.blit(menu_2, (0,0))
             screen.blit(pygame.transform.scale_by(gameplay_1, (0.25,0.25)), (70,140))
             screen.blit(pygame.transform.scale_by(gameplay_2, (0.25, 0.25)), (70, 260))
             screen.blit(escape_rect, (600, 10))
+            
             one_text = pygame.font.Font(None , 25)
             two_text = pygame.font.Font(None , 25)
+            
             one_rect = one_text.render('1. Delta Halo Woodland', False, 'white')
             two_rect = two_text.render('2. New Alexandria', False, 'white')
+            
             screen.blit(one_rect, (70,120))
             screen.blit(two_rect, (70, 240))
+            # Clear previous scores
             dead_grunt_list.clear()
             dead_elite_list.clear()
             dead_zealot_list.clear()
+            
             keys = pygame.key.get_pressed()
 
-            if keys[pygame.K_1]:
+            if keys[pygame.K_1]: # Select level 1
                 level_1 = True
                 level_2 = False
                 level_active = False
                 game_active = True
-                pygame.time.set_timer(grunt_timer, 1200)
+                # Start spawn timers
+                pygame.time.set_timer(grunt_timer, 1200) 
                 pygame.time.set_timer(elite_timer, 3000)
                 pygame.time.set_timer(zealot_timer, 6000)
 
-            elif keys[pygame.K_2]:
+            elif keys[pygame.K_2]: # Select level 2
                 level_2 = True
                 level_1 = False
                 level_active = False
                 game_active = True
+                # Start spawn timers
                 pygame.time.set_timer(grunt_timer, 1200)
                 pygame.time.set_timer(elite_timer, 3000)
                 pygame.time.set_timer(zealot_timer, 6000)
 
-        elif death_active and not level_active:
+        elif death_active and not level_active: # Death screen
+            # Graphics
             menu_3 = pygame.image.load("Placeholder").convert_alpha()
             screen.blit(menu_3, (0,0))
             score_text = pygame.font.Font(None, 70)
             grunt_text = pygame.font.Font(None, 40)
             elite_text = pygame.font.Font(None, 40)
             zealot_text = pygame.font.Font(None, 40)
-
+            # Show scores
             score_surface = score_text.render(f'Score: {(int(len(dead_grunt_list)) * 10) + (int(len(dead_elite_list)) * 25) + (int(len(dead_zealot_list)) * 50)}',False, 'white')
             grunt_text_surface = grunt_text.render(f'Grunts: {int(len(dead_grunt_list))} x10', False, 'white')
             elite_text_surface = elite_text.render(f'Elites: {int(len(dead_elite_list))} x25', False, 'white')
@@ -632,13 +649,13 @@ def game():
             screen.blit(elite_text_surface, (305, 130))
             screen.blit(zealot_text_surface, (305, 160))
 
-            if pygame.key.get_pressed()[pygame.K_SPACE]:
+            if pygame.key.get_pressed()[pygame.K_SPACE]: # Press space to level select
                 level_active = True
                 death_active = False
 
 
 
-    if len(player_health) == 0:
+    if len(player_health) == 0: # Reset parameters
         game_active = False
         level_1 = False
         level_2 = False
@@ -653,38 +670,38 @@ def game():
 
 
 
-def music():
+def music(): # Music function
     global is_playing_zeta_halo, is_playing_halo_theme, is_playing_through_the_trees
 
-    if not game_active:
+    if not game_active: # If in menu
         if not is_playing_zeta_halo:
             channel_3.stop()  # Stop any currently playing sound
             channel_3.play(zeta_halo_sfx, loops=-1)
-            is_playing_zeta_halo = True
+            is_playing_zeta_halo = True # Play menu music
             is_playing_halo_theme = False
             is_playing_through_the_trees = False
     else:
         if not level_1 and not is_playing_halo_theme:
-            channel_3.stop()
+            channel_3.stop() # Stop any currently playing sound
             channel_3.play(halo_theme_sfx, loops=-1)
             is_playing_zeta_halo = False
-            is_playing_halo_theme = True
+            is_playing_halo_theme = True # Play level 1 music
             is_playing_through_the_trees = False
         elif level_1 and not is_playing_through_the_trees:
-            channel_3.stop()
+            channel_3.stop() # Stop any currently playing sound
             channel_3.play(through_the_trees_sfx, loops=-1)
             is_playing_zeta_halo = False
             is_playing_halo_theme = False
-            is_playing_through_the_trees = True
+            is_playing_through_the_trees = True # Play level 2 music
 
 
 # Event loop
 while True:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]:
-            pygame.quit()
+        if event.type == pygame.QUIT or pygame.key.get_pressed()[pygame.K_ESCAPE]: # If escape is pressed
+            pygame.quit() # Quit
             exit()
-        if game_active == True:
+        if game_active == True: # Adding enemies to game
             if event.type == grunt_timer:
                 grunt_group.add(Grunt())
             if event.type == elite_timer:
@@ -700,7 +717,7 @@ while True:
     clock.tick(60)
 
     mouse_pos = pygame.mouse.get_pos()
-    if game_active == True:
+    if game_active == True: # Level falg selection
         if level_1 == True:
             forest()
         if level_2 == True:
@@ -721,4 +738,5 @@ while True:
 
         player.draw(screen)
         player.update()
+
 
